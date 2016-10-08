@@ -7,11 +7,14 @@
 #include "pb_decode.h"
 
 #define PIN 6
+#define MATRIX_WIDTH 32
+#define MATRIX_HEIGHT 8
+
 char messageBuffer[256];
 OutgoingMessage om = OutgoingMessage();
 mduino m = mduino();
 
-Adafruit_NeoMatrix matrix = Adafruit_NeoMatrix(32, 8, PIN,
+Adafruit_NeoMatrix matrix = Adafruit_NeoMatrix(MATRIX_WIDTH, MATRIX_HEIGHT, PIN,
 //  NEO_MATRIX_TOP     + NEO_MATRIX_RIGHT +
   NEO_MATRIX_BOTTOM  + NEO_MATRIX_RIGHT +
   NEO_MATRIX_COLUMNS + NEO_MATRIX_ZIGZAG,
@@ -31,8 +34,11 @@ void loop() {
   if (m.getResponse().isAvailable()) {
     matrix.fillScreen(0);
     matrix.setCursor(0, 0);
-    sprintf(messageBuffer, "%d", m.getResponse().getFrameData()[0]);
+    sprintf(messageBuffer, "%s", m.getResponse().getFrameData());
+    messageBuffer[m.getResponse().getFrameLength()] = '\0';
+    Serial.println(messageBuffer);
     matrix.print(F(messageBuffer));
     matrix.show();
   }
 }
+
