@@ -1,3 +1,4 @@
-[submodule "arduino-mbed-message-framework"]
-	path = arduino-mbed-message-framework
-	url = https://github.com/cujomalainey/arduino-mbed-message-framework.git
+
+[submodule "mduino-messaging"]
+	path = mduino-messaging
+	url = https://github.com/cujomalainey/mduino-messaging.git
