@@ -10,13 +10,18 @@
 #define MATRIX_WIDTH 32
 #define MATRIX_HEIGHT 8
 
+#define DEMO_MODE
+
 char messageBuffer[256];
 OutgoingMessage om = OutgoingMessage();
 mduino m = mduino();
 
 Adafruit_NeoMatrix matrix = Adafruit_NeoMatrix(MATRIX_WIDTH, MATRIX_HEIGHT, PIN,
-//  NEO_MATRIX_TOP     + NEO_MATRIX_RIGHT +
-  NEO_MATRIX_BOTTOM  + NEO_MATRIX_RIGHT +
+  #if defined(DEMO_MODE)
+    NEO_MATRIX_BOTTOM  + NEO_MATRIX_RIGHT +
+  #else
+    NEO_MATRIX_TOP     + NEO_MATRIX_RIGHT +
+  #endif
   NEO_MATRIX_COLUMNS + NEO_MATRIX_ZIGZAG,
   NEO_GRB            + NEO_KHZ800);
 
