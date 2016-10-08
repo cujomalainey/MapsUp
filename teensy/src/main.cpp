@@ -15,6 +15,7 @@
 char messageBuffer[256];
 OutgoingMessage om = OutgoingMessage();
 mduino m = mduino();
+uint8_t brightness = 0;
 
 Adafruit_NeoMatrix matrix = Adafruit_NeoMatrix(MATRIX_WIDTH, MATRIX_HEIGHT, PIN,
   #if defined(DEMO_MODE)
@@ -41,7 +42,6 @@ void loop() {
     matrix.setCursor(0, 0);
     sprintf(messageBuffer, "%s", m.getResponse().getFrameData());
     messageBuffer[m.getResponse().getFrameLength()] = '\0';
-    Serial.println(messageBuffer);
     matrix.print(F(messageBuffer));
     matrix.show();
   }
