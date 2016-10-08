@@ -38,8 +38,8 @@ void IncomingMessage::setChecksum(uint8_t checksum) {
 	_checksum = checksum;
 }
 
-uint8_t IncomingMessage::getPacketLength() {
-	return _length - MDUINO_MSG_OVERHEAD_LENGTH;
+uint8_t IncomingMessage::getFrameLength() {
+	return _length;
 }
 
 bool IncomingMessage::isAvailable() {

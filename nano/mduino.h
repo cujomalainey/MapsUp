@@ -36,7 +36,7 @@ public:
 
 	void setFrameLength(uint8_t frameLength);
 
-	uint8_t getPacketLength();
+	uint8_t getFrameLength();
 
 	void reset();
 
