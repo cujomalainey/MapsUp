@@ -1,9 +1,8 @@
 message GoogleMapsDirection {
-  required int32 id = 1;
-  optional string distance = 2;
-  required string direction = 3;
-  required string eta = 4;
-  required TurnDirection tdirection = 5;
+  optional string distance = 1;
+  required string direction = 2;
+  required string eta = 3;
+  required TurnDirection tdirection = 4;
 
   enum TurnDirection {
     Right = 0;
