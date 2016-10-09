@@ -17,6 +17,7 @@
 #define MATRIX_MOVING_AVERAGE_QUEUE_LENGTH 20
 #define MATRIX_UPDATE_PERIOD 100
 #define ARROW_IMAGE_OFFSET 8
+#define DELAY_PERIOD 3000
 
 #define DEMO_MODE
 #define DEBUG
@@ -41,6 +42,7 @@ Adafruit_NeoMatrix matrix = Adafruit_NeoMatrix(MATRIX_WIDTH, MATRIX_HEIGHT, PIN,
 
 bool decode_distance(pb_istream_t *stream, const pb_field_t *field, void **arg)
 {
+    memset(messageBuffer, 0, sizeof(messageBuffer));
     /* We could read block-by-block to avoid the large buffer... */
     if (stream->bytes_left > sizeof(messageBuffer) - 1)
         return false;
@@ -58,20 +60,27 @@ void drawMatrix()
 {
   static uint32_t last_sample = 0;
   static int16_t pos_x = ARROW_IMAGE_OFFSET;
-  static uint32_t delay = millis() + 3000;
+  static uint32_t delay = millis() + DELAY_PERIOD;
   uint32_t t = millis();
   uint16_t width = strlen((char*)messageBuffer)*6;
   if (t - last_sample > MATRIX_UPDATE_PERIOD && bufferLoaded)
   {
     last_sample = t;
     matrix.fillScreen(0);
-    pos_x--;
-    // Serial.print("X:");
-    // Serial.print(pos_x);
-    // Serial.print(" W:");
-    // Serial.println(width);
-    if (pos_x + width < ARROW_IMAGE_OFFSET) {
-      pos_x = MATRIX_WIDTH;
+    if (millis() > delay)
+    {
+        pos_x--;
+        if (pos_x + width < ARROW_IMAGE_OFFSET) {
+          pos_x = MATRIX_WIDTH;
+        }
+        if (pos_x == ARROW_IMAGE_OFFSET)
+        {
+          delay = millis() + DELAY_PERIOD;
+        }
+    }
+    if (width < MATRIX_WIDTH - ARROW_IMAGE_OFFSET && pos_x == ARROW_IMAGE_OFFSET)
+    {
+      pos_x = ARROW_IMAGE_OFFSET;
     }
     matrix.setCursor(pos_x, 0);
     matrix.print(F(messageBuffer));
@@ -139,8 +148,6 @@ void setup()
   Serial1.begin(9600);
   m.setSerial(Serial1);
   message.distance.funcs.decode  = &decode_distance;
-  message.direction.funcs.decode = &decode_direction;
-  message.eta.funcs.decode       = &decode_eta;
 
   // init lux sensor
   if(!tsl.begin())
