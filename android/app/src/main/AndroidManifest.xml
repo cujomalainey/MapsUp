@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="me.brosa.myapplication">
+    package="me.brosa.mapsup">
     <uses-permission android:name="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE" />
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
@@ -13,7 +13,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <service
-            android:name=".NotificationListenerService"
+            android:name="me.brosa.mapsup.NotificationListenerService"
             android:label="@string/notification_listener_service_name"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
             <intent-filter>
@@ -22,7 +22,7 @@
         </service>
 
         <receiver
-            android:name=".BootReceiver"
+            android:name="me.brosa.mapsup.BootReceiver"
             android:enabled="true"
             android:exported="false">
             <intent-filter>
@@ -32,7 +32,7 @@
         </receiver>
 
         <activity
-            android:name=".MainActivity"
+            android:name="me.brosa.mapsup.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

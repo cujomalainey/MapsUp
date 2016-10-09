@@ -1,4 +1,4 @@
-package me.brosa.myapplication;
+package me.brosa.mapsup;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;

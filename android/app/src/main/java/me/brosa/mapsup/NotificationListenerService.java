@@ -1,4 +1,4 @@
-package me.brosa.myapplication;
+package me.brosa.mapsup;
 
 import android.app.Notification;
 import android.bluetooth.BluetoothAdapter;
