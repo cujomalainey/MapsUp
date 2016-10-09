@@ -6,6 +6,7 @@
 #include <pb_common.h>
 #include <pb_decode.h>
 #include "GoogleMapsDirection.pb.h"
+#include "images.h"
 
 #define PIN 6
 #define MATRIX_WIDTH 32
@@ -13,9 +14,10 @@
 #define LUX_SAMPLE_PERIOD 200
 #define MATRIX_MAX_BRIGHTNESS 100
 #define MATRIX_MIN_BRIGHTNESS 1
-#define MATRIX_MOVING_AVERAGE_QUEUE_LENGTH 30
+#define MATRIX_MOVING_AVERAGE_QUEUE_LENGTH 20
 
 #define DEMO_MODE
+#define DEBUG
 
 Adafruit_TSL2561_Unified tsl = Adafruit_TSL2561_Unified(TSL2561_ADDR_FLOAT, 12345);
 sensor_t sensor;
@@ -54,7 +56,6 @@ bool decode_string(pb_istream_t *stream, const pb_field_t *field, void **arg)
     matrix.fillScreen(0);
     matrix.setCursor(0, 0);
     matrix.print(F(buffer));
-    matrix.show();
     return true;
 }
 
@@ -98,14 +99,12 @@ void serviceComms()
   if (m.getResponse().isAvailable()) {
     pb_istream_t stream = pb_istream_from_buffer(m.getResponse().getFrameData(), m.getResponse().getFrameLength());
     message.distance.funcs.decode = &decode_string;
-    if (pb_decode(&stream, GoogleMapsDirection_fields, &message))
-    {
-      
-    }
-    else
+    if (!pb_decode(&stream, GoogleMapsDirection_fields, &message))
     {
       Serial.println("Decoding Failed");
     }
+    matrix.drawBitmap(0,0, image_index[message.tdirection].img, image_index[message.tdirection].w, image_index[message.tdirection].h, matrix.Color(255, 255, 255));
+    matrix.show();
   }
 
 }
@@ -134,7 +133,8 @@ void setup()
 
   #if defined(DEBUG)
     Serial.begin(9600);
-    delay(5000);
+    // delay(5000);
+    matrix.show();
   #endif
 }
 
