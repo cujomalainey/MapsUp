@@ -31,7 +31,6 @@
 # Debug files
 *.dSYM/
 *.su
-<<<<<<< HEAD
 
 # Built application files
 *.apk
@@ -79,6 +78,4 @@ captures/
 .externalNativeBuild
 0
 
-=======
 .DS_Store
->>>>>>> 7c83c89ce0803804f66c5dd92710ff663f3e2ed4
