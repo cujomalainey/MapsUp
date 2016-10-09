@@ -26,16 +26,12 @@ GattCharacteristic  characteristic2(service1_rx_uuid, rx_value, 1, TXRX_BUF_LEN,
 GattCharacteristic *uartChars[] = {&characteristic1, &characteristic2};
 GattService         uartService(service1_uuid, uartChars, sizeof(uartChars) / sizeof(GattCharacteristic *));
 
-
-uint8_t outDataBuffer[5];
 OutgoingMessage om = OutgoingMessage();
 mduino m = mduino();
 
 void setup() {
   Serial.begin(9600);
   m.setSerial(Serial);
-  om.setData(outDataBuffer);
-  om.setDataLength(sizeof(outDataBuffer));
   om.setMsgId(0);
 
   Serial.attach(uart_handle);

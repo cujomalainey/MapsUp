@@ -15,6 +15,9 @@
 #define MATRIX_MAX_BRIGHTNESS 100
 #define MATRIX_MIN_BRIGHTNESS 1
 #define MATRIX_MOVING_AVERAGE_QUEUE_LENGTH 20
+#define MATRIX_UPDATE_PERIOD 100
+#define ARROW_IMAGE_OFFSET 8
+#define DELAY_PERIOD 3000
 
 #define DEMO_MODE
 #define DEBUG
@@ -22,7 +25,8 @@
 Adafruit_TSL2561_Unified tsl = Adafruit_TSL2561_Unified(TSL2561_ADDR_FLOAT, 12345);
 sensor_t sensor;
 
-char messageBuffer[256];
+uint8_t messageBuffer[256];
+bool bufferLoaded = false;
 OutgoingMessage om = OutgoingMessage();
 mduino m = mduino();
 GoogleMapsDirection message = GoogleMapsDirection_init_default;
@@ -36,27 +40,54 @@ Adafruit_NeoMatrix matrix = Adafruit_NeoMatrix(MATRIX_WIDTH, MATRIX_HEIGHT, PIN,
   NEO_MATRIX_COLUMNS + NEO_MATRIX_ZIGZAG,
   NEO_GRB            + NEO_KHZ800);
 
-bool decode_string(pb_istream_t *stream, const pb_field_t *field, void **arg)
+bool decode_distance(pb_istream_t *stream, const pb_field_t *field, void **arg)
 {
-    Serial.println("Decoding String");
-    uint8_t buffer[128] = {0};
-
+    memset(messageBuffer, 0, sizeof(messageBuffer));
     /* We could read block-by-block to avoid the large buffer... */
-    if (stream->bytes_left > sizeof(buffer) - 1)
+    if (stream->bytes_left > sizeof(messageBuffer) - 1)
         return false;
 
-    if (!pb_read(stream, buffer, stream->bytes_left))
+    if (!pb_read(stream, messageBuffer, stream->bytes_left))
         return false;
 
     /* Print the string, in format comparable with protoc --decode.
      * Format comes from the arg defined in main().
      */
-    Serial.print("Decoding:");
-    Serial.println((char*)buffer);
-    matrix.fillScreen(0);
-    matrix.setCursor(0, 0);
-    matrix.print(F(buffer));
     return true;
+}
+
+void drawMatrix()
+{
+  static uint32_t last_sample = 0;
+  static int16_t pos_x = ARROW_IMAGE_OFFSET;
+  static uint32_t delay = millis() + DELAY_PERIOD;
+  uint32_t t = millis();
+  uint16_t width = strlen((char*)messageBuffer)*6;
+  if (t - last_sample > MATRIX_UPDATE_PERIOD && bufferLoaded)
+  {
+    last_sample = t;
+    matrix.fillScreen(0);
+    if (millis() > delay)
+    {
+        pos_x--;
+        if (pos_x + width < ARROW_IMAGE_OFFSET) {
+          pos_x = MATRIX_WIDTH;
+        }
+        if (pos_x == ARROW_IMAGE_OFFSET)
+        {
+          delay = millis() + DELAY_PERIOD;
+        }
+    }
+    if (width < MATRIX_WIDTH - ARROW_IMAGE_OFFSET && pos_x == ARROW_IMAGE_OFFSET)
+    {
+      pos_x = ARROW_IMAGE_OFFSET;
+    }
+    matrix.setCursor(pos_x, 0);
+    matrix.print(F(messageBuffer));
+    matrix.fillRect(0, 0, 8, 8, 0);
+    matrix.drawBitmap(0 + image_index[message.tdirection].x_offset,0, image_index[message.tdirection].img, image_index[message.tdirection].w, image_index[message.tdirection].h, matrix.Color(255, 255, 255));
+    matrix.show();
+  }
 }
 
 void serviceLux()
@@ -79,15 +110,11 @@ void serviceLux()
     double avg = 0;
     for (int i = 0; i < MATRIX_MOVING_AVERAGE_QUEUE_LENGTH; i++)
     {
-      Serial.print(movingAverage[i]);
-      Serial.print(", ");
       avg += movingAverage[i];
     }
-    Serial.println();
     avg = avg / MATRIX_MOVING_AVERAGE_QUEUE_LENGTH;
-    Serial.println(avg);
     avg = map(avg, sensor.min_value, sensor.max_value, MATRIX_MIN_BRIGHTNESS, MATRIX_MAX_BRIGHTNESS);
-    Serial.println(avg);
+    // only exception to drawing outside of drawMatrix
     matrix.setBrightness(avg);
     matrix.show();
   }
@@ -97,14 +124,14 @@ void serviceComms()
 {
   m.readPacket();
   if (m.getResponse().isAvailable()) {
+    Serial.println(m.getResponse().getFrameLength());
     pb_istream_t stream = pb_istream_from_buffer(m.getResponse().getFrameData(), m.getResponse().getFrameLength());
-    message.distance.funcs.decode = &decode_string;
     if (!pb_decode(&stream, GoogleMapsDirection_fields, &message))
     {
-      Serial.println("Decoding Failed");
+      Serial.print("Decode failed: ");
+      Serial.println(PB_GET_ERROR(&stream));
     }
-    matrix.drawBitmap(0,0, image_index[message.tdirection].img, image_index[message.tdirection].w, image_index[message.tdirection].h, matrix.Color(255, 255, 255));
-    matrix.show();
+    bufferLoaded = true;
   }
 
 }
@@ -120,6 +147,7 @@ void setup()
   //init comms
   Serial1.begin(9600);
   m.setSerial(Serial1);
+  message.distance.funcs.decode  = &decode_distance;
 
   // init lux sensor
   if(!tsl.begin())
@@ -142,4 +170,5 @@ void loop()
 {
   serviceComms();
   serviceLux();
+  drawMatrix();
 }

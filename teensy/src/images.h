@@ -8,13 +8,14 @@ const uint8_t straight[] PROGMEM = {0x00, 0x20, 0x70, 0xf8, 0xa8, 0x20, 0x20, 0x
 struct image{
 	uint16_t w;
 	uint16_t h;
+	uint8_t x_offset;
 	const uint8_t* img;
 };
 
 const struct image image_index[]
 {
-	{6, 8, right},
-	{6, 8, left},
-	{5, 8, straight},
-	{7, 8, uturn}
+	{6, 8, 1, right},
+	{6, 8, 1, left},
+	{5, 8, 1, straight},
+	{7, 8, 0, uturn}
 };
