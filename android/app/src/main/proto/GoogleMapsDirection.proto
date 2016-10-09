@@ -1,0 +1,13 @@
+message GoogleMapsDirection {
+  optional string distance = 1;
+  required string direction = 2;
+  required string eta = 3;
+  required TurnDirection tdirection = 4;
+
+  enum TurnDirection {
+    Right = 0;
+    Left = 1;
+    Straight = 2;
+    TurnAround = 3;
+  }
+}

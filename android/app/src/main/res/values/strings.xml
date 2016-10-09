@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">MapsUP Service</string>
+    <string name="notification_listener_service_name">MapsUp Navigation Listener</string>
+</resources>
