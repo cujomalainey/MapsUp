@@ -22,33 +22,9 @@ public final class GoogleMapsDirection extends Message<GoogleMapsDirection, Goog
 
   private static final long serialVersionUID = 0L;
 
-  public static final String DEFAULT_DISTANCE = "";
-
-  public static final String DEFAULT_DIRECTION = "";
-
-  public static final String DEFAULT_ETA = "";
-
   public static final TurnDirection DEFAULT_TDIRECTION = TurnDirection.Right;
 
-  @WireField(
-      tag = 1,
-      adapter = "com.squareup.wire.ProtoAdapter#STRING"
-  )
-  public final String distance;
-
-  @WireField(
-      tag = 2,
-      adapter = "com.squareup.wire.ProtoAdapter#STRING",
-      label = WireField.Label.REQUIRED
-  )
-  public final String direction;
-
-  @WireField(
-      tag = 3,
-      adapter = "com.squareup.wire.ProtoAdapter#STRING",
-      label = WireField.Label.REQUIRED
-  )
-  public final String eta;
+  public static final String DEFAULT_DISTANCE = "";
 
   @WireField(
       tag = 4,
@@ -57,25 +33,28 @@ public final class GoogleMapsDirection extends Message<GoogleMapsDirection, Goog
   )
   public final TurnDirection tdirection;
 
-  public GoogleMapsDirection(String distance, String direction, String eta, TurnDirection tdirection) {
-    this(distance, direction, eta, tdirection, ByteString.EMPTY);
+  @WireField(
+      tag = 1,
+      adapter = "com.squareup.wire.ProtoAdapter#STRING",
+      label = WireField.Label.REQUIRED
+  )
+  public final String distance;
+
+  public GoogleMapsDirection(TurnDirection tdirection, String distance) {
+    this(tdirection, distance, ByteString.EMPTY);
   }
 
-  public GoogleMapsDirection(String distance, String direction, String eta, TurnDirection tdirection, ByteString unknownFields) {
+  public GoogleMapsDirection(TurnDirection tdirection, String distance, ByteString unknownFields) {
     super(ADAPTER, unknownFields);
-    this.distance = distance;
-    this.direction = direction;
-    this.eta = eta;
     this.tdirection = tdirection;
+    this.distance = distance;
   }
 
   @Override
   public Builder newBuilder() {
     Builder builder = new Builder();
-    builder.distance = distance;
-    builder.direction = direction;
-    builder.eta = eta;
     builder.tdirection = tdirection;
+    builder.distance = distance;
     builder.addUnknownFields(unknownFields());
     return builder;
   }
@@ -86,10 +65,8 @@ public final class GoogleMapsDirection extends Message<GoogleMapsDirection, Goog
     if (!(other instanceof GoogleMapsDirection)) return false;
     GoogleMapsDirection o = (GoogleMapsDirection) other;
     return unknownFields().equals(o.unknownFields())
-        && Internal.equals(distance, o.distance)
-        && direction.equals(o.direction)
-        && eta.equals(o.eta)
-        && tdirection.equals(o.tdirection);
+        && tdirection.equals(o.tdirection)
+        && distance.equals(o.distance);
   }
 
   @Override
@@ -97,10 +74,8 @@ public final class GoogleMapsDirection extends Message<GoogleMapsDirection, Goog
     int result = super.hashCode;
     if (result == 0) {
       result = unknownFields().hashCode();
-      result = result * 37 + (distance != null ? distance.hashCode() : 0);
-      result = result * 37 + direction.hashCode();
-      result = result * 37 + eta.hashCode();
       result = result * 37 + tdirection.hashCode();
+      result = result * 37 + distance.hashCode();
       super.hashCode = result;
     }
     return result;
@@ -109,38 +84,17 @@ public final class GoogleMapsDirection extends Message<GoogleMapsDirection, Goog
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    if (distance != null) builder.append(", distance=").append(distance);
-    builder.append(", direction=").append(direction);
-    builder.append(", eta=").append(eta);
     builder.append(", tdirection=").append(tdirection);
+    builder.append(", distance=").append(distance);
     return builder.replace(0, 2, "GoogleMapsDirection{").append('}').toString();
   }
 
   public static final class Builder extends Message.Builder<GoogleMapsDirection, Builder> {
-    public String distance;
-
-    public String direction;
-
-    public String eta;
-
     public TurnDirection tdirection;
 
+    public String distance;
+
     public Builder() {
-    }
-
-    public Builder distance(String distance) {
-      this.distance = distance;
-      return this;
-    }
-
-    public Builder direction(String direction) {
-      this.direction = direction;
-      return this;
-    }
-
-    public Builder eta(String eta) {
-      this.eta = eta;
-      return this;
     }
 
     public Builder tdirection(TurnDirection tdirection) {
@@ -148,16 +102,19 @@ public final class GoogleMapsDirection extends Message<GoogleMapsDirection, Goog
       return this;
     }
 
+    public Builder distance(String distance) {
+      this.distance = distance;
+      return this;
+    }
+
     @Override
     public GoogleMapsDirection build() {
-      if (direction == null
-          || eta == null
-          || tdirection == null) {
-        throw Internal.missingRequiredFields(direction, "direction",
-            eta, "eta",
-            tdirection, "tdirection");
+      if (tdirection == null
+          || distance == null) {
+        throw Internal.missingRequiredFields(tdirection, "tdirection",
+            distance, "distance");
       }
-      return new GoogleMapsDirection(distance, direction, eta, tdirection, super.buildUnknownFields());
+      return new GoogleMapsDirection(tdirection, distance, super.buildUnknownFields());
     }
   }
 
@@ -204,21 +161,19 @@ public final class GoogleMapsDirection extends Message<GoogleMapsDirection, Goog
 
     @Override
     public int encodedSize(GoogleMapsDirection value) {
-      return (value.distance != null ? ProtoAdapter.STRING.encodedSizeWithTag(1, value.distance) : 0)
-          + ProtoAdapter.STRING.encodedSizeWithTag(2, value.direction)
-          + ProtoAdapter.STRING.encodedSizeWithTag(3, value.eta)
-          + TurnDirection.ADAPTER.encodedSizeWithTag(4, value.tdirection)
+      return TurnDirection.ADAPTER.encodedSizeWithTag(4, value.tdirection)
+          + ProtoAdapter.STRING.encodedSizeWithTag(1, value.distance)
           + value.unknownFields().size();
     }
 
     @Override
     public void encode(ProtoWriter writer, GoogleMapsDirection value) throws IOException {
-      if (value.distance != null) ProtoAdapter.STRING.encodeWithTag(writer, 1, value.distance);
-      ProtoAdapter.STRING.encodeWithTag(writer, 2, value.direction);
-      ProtoAdapter.STRING.encodeWithTag(writer, 3, value.eta);
       TurnDirection.ADAPTER.encodeWithTag(writer, 4, value.tdirection);
+      ProtoAdapter.STRING.encodeWithTag(writer, 1, value.distance);
       writer.writeBytes(value.unknownFields());
     }
+
+
 
     @Override
     public GoogleMapsDirection decode(ProtoReader reader) throws IOException {
@@ -226,9 +181,6 @@ public final class GoogleMapsDirection extends Message<GoogleMapsDirection, Goog
       long token = reader.beginMessage();
       for (int tag; (tag = reader.nextTag()) != -1;) {
         switch (tag) {
-          case 1: builder.distance(ProtoAdapter.STRING.decode(reader)); break;
-          case 2: builder.direction(ProtoAdapter.STRING.decode(reader)); break;
-          case 3: builder.eta(ProtoAdapter.STRING.decode(reader)); break;
           case 4: {
             try {
               builder.tdirection(TurnDirection.ADAPTER.decode(reader));
@@ -237,6 +189,7 @@ public final class GoogleMapsDirection extends Message<GoogleMapsDirection, Goog
             }
             break;
           }
+          case 1: builder.distance(ProtoAdapter.STRING.decode(reader)); break;
           default: {
             FieldEncoding fieldEncoding = reader.peekFieldEncoding();
             Object value = fieldEncoding.rawProtoAdapter().decode(reader);
