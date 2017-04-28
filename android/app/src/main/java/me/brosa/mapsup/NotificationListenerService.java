@@ -12,15 +12,23 @@ import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.IBinder;
 import android.service.notification.StatusBarNotification;
 import android.util.Log;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.RemoteViews;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.InputStream;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -50,6 +58,7 @@ public class NotificationListenerService extends android.service.notification.No
     private BluetoothGattService mBtGattService;
 
     private String mBtDeviceAddress = null;
+    private int mLastTransmitionCode = 0;
 
     private Set<BluetoothDevice> mDevices = new HashSet<>();
 
@@ -123,8 +132,6 @@ public class NotificationListenerService extends android.service.notification.No
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             getApplicationContext().startActivity(enableBtIntent);
         }
-
-        scanForDevices();
     }
 
     private boolean connect(final String address) {
@@ -194,61 +201,68 @@ public class NotificationListenerService extends android.service.notification.No
 
     @Override
     public void onNotificationPosted(StatusBarNotification sbn) {
-        Log.d(DEBUG_TAG, "Notification Posted!");
-        sendGoogleMapsDirections(sbn);
+        if (sbn.getPackageName().equals("com.google.android.apps.maps") && !sbn.isClearable()) {
+            if (mBtDevice == null) {
+                scanForDevices();
+            }
+            sendGoogleMapsDirections(sbn.getNotification());
+        }
 
         super.onNotificationPosted(sbn);
     }
 
-    private void sendGoogleMapsDirections(StatusBarNotification sbn) {
-        if (sbn.getPackageName().equals("com.google.android.apps.maps") && !sbn.isClearable()) {
-            Notification n = sbn.getNotification();
-            RemoteViews rv = n.bigContentView;
-            RelativeLayout rl = (RelativeLayout) rv.apply(getApplicationContext(), null);
-            LinearLayout ll = (LinearLayout) ((LinearLayout) rl.getChildAt(1)).getChildAt(0);
-            TextView distance = (TextView) ll.getChildAt(0);
-            TextView direction = (TextView) ll.getChildAt(1);
-            TextView eta = (TextView) ll.getChildAt(2);
 
-            Log.d(DEBUG_TAG, distance.getText().toString());
-            Log.d(DEBUG_TAG, direction.getText().toString());
-            Log.d(DEBUG_TAG, eta.getText().toString());
+    private void sendGoogleMapsDirections(Notification n) {
+        RemoteViews rv = n.bigContentView;
+        RelativeLayout rl = (RelativeLayout) rv.apply(getApplicationContext(), null);
+        ImageView turnArrow = (ImageView) rl.getChildAt(0);
 
-            if (mConnected && mBtGattService != null) {
-                Log.d(DEBUG_TAG, "Sending data");
-                BluetoothGattCharacteristic cr = mBtGattService.getCharacteristic(NotificationListenerService.UUID_BLE_SHIELD_TX);
+        Log.d(DEBUG_TAG, Integer.toHexString(turnArrow.hashCode()));
+        Log.d(DEBUG_TAG, Integer.toHexString(turnArrow.getDrawable().getConstantState().hashCode()));
 
-                GoogleMapsDirection.TurnDirection d = null;
-                String directionString = direction.getText().toString();
+        LinearLayout ll = (LinearLayout) ((LinearLayout) rl.getChildAt(1)).getChildAt(0);
+        TextView distance = (TextView) ll.getChildAt(0);
+        TextView direction = (TextView) ll.getChildAt(1);
+        TextView eta = (TextView) ll.getChildAt(2);
 
-                Pattern pStraight = Pattern.compile("continue|straight|ahead", Pattern.CASE_INSENSITIVE);
-                Pattern pLeft = Pattern.compile("left", Pattern.CASE_INSENSITIVE);
-                Pattern pRight = Pattern.compile("right", Pattern.CASE_INSENSITIVE);
-                Pattern uTurn = Pattern.compile("u-turn", Pattern.CASE_INSENSITIVE);
+        Log.d(DEBUG_TAG, distance.getText().toString());
+        Log.d(DEBUG_TAG, direction.getText().toString());
+        Log.d(DEBUG_TAG, eta.getText().toString());
 
-                if (pStraight.matcher(directionString).matches())
-                    d = GoogleMapsDirection.TurnDirection.Straight;
-                if (pLeft.matcher(directionString).matches())
-                    d = GoogleMapsDirection.TurnDirection.Left;
-                if (pRight.matcher(directionString).matches())
-                    d = GoogleMapsDirection.TurnDirection.Right;
-                if (uTurn.matcher(directionString).matches())
-                    d = GoogleMapsDirection.TurnDirection.TurnAround;
+        if (mConnected && mBtGattService != null) {
+            BluetoothGattCharacteristic cr = mBtGattService.getCharacteristic(NotificationListenerService.UUID_BLE_SHIELD_TX);
 
-                if (d == null)
-                    d = GoogleMapsDirection.TurnDirection.Straight;
+            GoogleMapsDirection.TurnDirection d = null;
+            String directionString = direction.getText().toString();
 
-                GoogleMapsDirection payload = new GoogleMapsDirection.Builder()
-                        .distance(distance.getText().toString().replaceAll("\\s+",""))
-                        .eta(eta.getText().toString().replaceAll("\\s+",""))
-                        .direction(direction.getText().toString().replaceAll("\\s+",""))
-                        .tdirection(d)
-                        .build();
+            Pattern pStraight = Pattern.compile("continue|straight|ahead|stay", Pattern.CASE_INSENSITIVE);
+            Pattern pLeft = Pattern.compile("left", Pattern.CASE_INSENSITIVE);
+            Pattern pRight = Pattern.compile("right", Pattern.CASE_INSENSITIVE);
+            Pattern uTurn = Pattern.compile("u-turn", Pattern.CASE_INSENSITIVE);
 
+            if (pStraight.matcher(directionString).matches())
+                d = GoogleMapsDirection.TurnDirection.Straight;
+            if (pLeft.matcher(directionString).matches())
+                d = GoogleMapsDirection.TurnDirection.Left;
+            if (pRight.matcher(directionString).matches())
+                d = GoogleMapsDirection.TurnDirection.Right;
+            if (uTurn.matcher(directionString).matches())
+                d = GoogleMapsDirection.TurnDirection.TurnAround;
 
-                cr.setValue(payload.encode());
-                mBtGatt.writeCharacteristic(cr);
-            }
+            if (d == null)
+                d = GoogleMapsDirection.TurnDirection.Straight;
+
+            GoogleMapsDirection payload = new GoogleMapsDirection.Builder()
+                    .distance(distance.getText().toString().replaceAll("\\s+",""))
+                    .tdirection(d)
+                    .build();
+            if (payload.hashCode() == mLastTransmitionCode)
+                return;
+            mLastTransmitionCode = payload.hashCode();
+
+            Log.d(DEBUG_TAG, "Sending " + String.valueOf(payload.encode().length) + " bytes of data");
+            cr.setValue(payload.encode());
+            mBtGatt.writeCharacteristic(cr);
         }
     }
 }
