@@ -78,4 +78,4 @@ captures/
 .externalNativeBuild
 0
 
-.DS_Store
+**/.DS_Store
