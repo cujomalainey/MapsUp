@@ -4,7 +4,7 @@ android {
     compileSdkVersion 24
     buildToolsVersion "24.0.1"
     defaultConfig {
-        applicationId "me.brosa.myapplication"
+        applicationId "me.brosa.mapsup"
         minSdkVersion 21
         targetSdkVersion 24
         versionCode 1
