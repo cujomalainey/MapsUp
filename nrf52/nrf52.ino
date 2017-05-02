@@ -184,6 +184,11 @@ void serviceComms()
     }
     bufferLoaded = true;
   }
+  else if (m.getResponse().isError())
+  {
+    Serial.print("mduino error: ");
+    Serial.println(m.getResponse().getErrorCode());
+  }
 
 }
 
